@@ -2,7 +2,9 @@ scriptId = 'com.myosurgeon'
 scriptTitle = "MyoSurgeon"  
 scriptDetailsUrl = ""  
 
-mouseDown = false
+leftMouseDown = false
+rightMouseDown = false
+grasping = false
 
 function onForegroundWindowChange(app, title)
     local uppercaseApp = string.upper(app)
@@ -10,19 +12,14 @@ function onForegroundWindowChange(app, title)
 end
 
 function onPoseEdge(pose, edge)
-    if pose == "fist" and edge == "on" then doGrab()
-    elseif pose == "fist" and edge == "off" then doRelease()
-    elseif pose == "fingersSpread" and edge == "on" then dropHand()
-    elseif pose == "fingersSpread" and edge == "off" then raiseHand()
+    myo.debug(pose)
+    if pose == "fist" and edge == "on" then grabOrRelease()
+    elseif pose == "waveIn" and edge == "on" then dropOrRaiseHand()
+    elseif pose == "waveOut" and edge == "on" then toggleRoll()
     end
 end
 
 function onPeriodic()
-    local r = myo.getRoll()
-    if r < -1 or r > 1 then startRoll()
-    else endRoll()
-    end
-
 end
 
 
@@ -48,31 +45,26 @@ function deactivate()
     myo.setLockingPolicy("standard")
 end
 
-function dropHand()
-    myo.mouse("left", "down")
-    mouseDown = true
-end
-
-function raiseHand()
-    myo.mouse("left", "up")
-    mouseDown = false
+function dropOrRaiseHand()
+    if leftMouseDown == false
+        then myo.mouse("left", "down")
+             leftMouseDown = true
+    elseif leftMouseDown == true
+        then myo.mouse("left","up")
+             leftMouseDown = false
+    end
+   
 end
 
 function startRoll()
-    if mouseDown == false 
-        then myo.mouse("right", "down")
-        mouseDown = true
-    end
+    myo.mouse("right", "down")
+    rolling = true
 end
 
 function endRoll()
-    if mouseDown == true 
-        then 
-        myo.mouse("right", "up") 
-        mouseDown = false
-    end
+    myo.mouse("right", "up") 
+    rolling = false
 end
-
 
 function doGrab()
     myo.keyboard("a","down")
@@ -80,6 +72,7 @@ function doGrab()
     myo.keyboard("e","down")
     myo.keyboard("r","down")
     myo.keyboard("space","down")
+    grasping = true
 end
 
 function doRelease()
@@ -88,4 +81,17 @@ function doRelease()
     myo.keyboard("e","up")
     myo.keyboard("r","up")
     myo.keyboard("space","up")
+    grasping = false
+end
+
+function toggleRoll()
+    if rolling == false then startRoll()
+    else endRoll()
+    end
+end
+
+function grabOrRelease()
+    if grasping == false then doGrab()
+    else doRelease()
+    end
 end
